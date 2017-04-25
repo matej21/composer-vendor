@@ -32,15 +32,18 @@ class Plugin implements PluginInterface, EventSubscriberInterface
 
 	public function init(Event $event)
 	{
-		$vendorMappingFile = $this->composer->getConfig()->get('home') . '/composer.vendor.json';
-		$file = new JsonFile($vendorMappingFile, NULL, $this->io);
-
+		$files = [$this->composer->getConfig()->get('home') . '/composer.vendor.json', 'composer.vendor.json'];
 		$mapping = [];
-		if ($file->exists()) {
-			$jsonParser = new JsonParser();
-			$mapping = $jsonParser->parse(file_get_contents($vendorMappingFile), JsonParser::DETECT_KEY_CONFLICTS);
+		foreach ($files as $mappingFile) {
+			$file = new JsonFile($mappingFile, NULL, $this->io);
+
+			if ($file->exists()) {
+				$jsonParser = new JsonParser();
+				$mapping = array_merge($mapping, (array) $jsonParser->parse(file_get_contents($mappingFile), JsonParser::DETECT_KEY_CONFLICTS));
+			}
+
 		}
-		if (!$mapping) {
+		if (count($mapping) === 0) {
 			return;
 		}
 
