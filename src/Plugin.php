@@ -46,12 +46,25 @@ class Plugin implements PluginInterface, EventSubscriberInterface
 		if (count($mapping) === 0) {
 			return;
 		}
+		$resultMapping = [];
+		$rootPackageName = $this->composer->getPackage()->getName();
+		list($vendor,) = explode('/', $rootPackageName);
+		foreach ($mapping as $rule => $path) {
+			if (strpos($rule, ':') === FALSE) {
+				$resultMapping[$rule] = $path;
+				continue;
+			}
+			list($requiredPackage, $dependency) = explode(':', $rule);
+			if ($requiredPackage === $rootPackageName || $requiredPackage === $vendor) {
+				$resultMapping[$dependency] = $path;
+			}
+		}
 
 		$installationManager = $this->composer->getInstallationManager();
 		$installer = $installationManager->getInstaller('library');
 		$installationManager->removeInstaller($installer);
 		$newInstaller = new LibraryInstaller($this->io, $this->composer, NULL);
-		$newInstaller->addMapping($mapping);
+		$newInstaller->addMapping($resultMapping);
 		$installationManager->addInstaller($newInstaller);
 	}
 
